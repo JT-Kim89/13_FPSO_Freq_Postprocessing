@@ -1,51 +1,22 @@
-# FLNG Frequency-Domain Module
+# FLNG / LNGC Side-By-Side Extension
 
-`flng/`는 FLNG frequency-domain postprocessing 전용 모듈입니다. C# 라이브러리는 RAO와 wave spectrum을 받아 motion statistics, local acceleration, relative wave, air gap, operability, 그리고 FLNG-LNGC side-by-side relative motion을 계산합니다.
+이 폴더는 FPSO 기본 후처리 코드에 추가되는 FLNG/LNGC side-by-side 해석 메모를 관리합니다. 메인 계산 엔진은 [../fpso](../fpso)에 있으며, FLNG 관련 기능은 두 선체의 relative motion이 필요한 하역 상태를 위한 확장 기능입니다.
 
-## 구성
+## 해석 개념
 
-```text
-src/FpsoFrequencyDomain/              계산 라이브러리
-samples/FpsoFrequencyDomain.Sample/   예제 실행 프로젝트
-tests/FpsoFrequencyDomain.Tests/      외부 test framework 없는 smoke test
-```
-
-## 실행
-
-저장소 루트에서:
-
-```powershell
-dotnet run --project flng/samples/FpsoFrequencyDomain.Sample
-dotnet run --project flng/tests/FpsoFrequencyDomain.Tests
-```
-
-`flng/` 폴더 안에서:
-
-```powershell
-dotnet run --project samples/FpsoFrequencyDomain.Sample
-dotnet run --project tests/FpsoFrequencyDomain.Tests
-```
-
-## 주요 입력
-
-- frequency array
-- wave spectrum, 또는 `Hs`, `Tp`, `gamma`로 생성한 PM/JONSWAP spectrum
-- FLNG 6DOF complex motion RAO
-- 필요 시 LNGC 6DOF complex motion RAO
-- RAO reference origin에서 COG 및 local point까지의 좌표
-- side-by-side 계산 시 LNGC origin의 FLNG 기준 offset
-- short-term duration, 예: 3 hr
-- long-term sea-state probability
-
-## Side-By-Side Relative Motion
-
-기본 결과는 다음 sense입니다.
+FLNG 옆에 LNGC가 접안한 상태에서는 FLNG manifold와 LNGC manifold 같은 두 local point 사이의 상대 운동을 평가합니다. 기본 sense는 다음과 같습니다.
 
 ```text
 relative = LNGC point motion - FLNG point motion
 ```
 
-우현에 LNGC가 붙는 경우 현재 좌표계에서는 `y`가 port positive이므로 LNGC origin offset은 보통 negative `Y`입니다.
+후처리 코드는 두 선체의 complex RAO를 같은 frequency grid와 wave phase 기준으로 맞춘 뒤 `X`, `Y`, `Z` 방향 상대 운동 spectrum, RMS, short-term MPM 등을 계산합니다.
+
+## Shielding Effect
+
+Shielding effect, hydrodynamic interaction, coupled radiation/diffraction 효과는 RAO 생성 단계에서 반영하는 것이 좋습니다. 즉, side-by-side condition으로 생성한 FLNG RAO와 LNGC RAO를 후처리 코드에 입력하면 됩니다.
+
+## 사용 예
 
 ```csharp
 var lngcOriginFromFlngOrigin = new BodyPoint(0.0, -92.0, 0.0);
