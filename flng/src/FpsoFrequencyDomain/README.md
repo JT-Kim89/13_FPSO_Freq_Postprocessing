@@ -1,6 +1,6 @@
-# FPSO Frequency Domain Engine
+# FLNG Frequency Domain Engine
 
-This C# library implements the first-pass FPSO frequency-domain workflow using
+This C# library implements the first-pass FLNG frequency-domain workflow using
 6DOF motion RAO and wave spectra only. Stress RAO, load RAO, mooring RAO, riser
 RAO, and second-order QTF workflows are intentionally outside this v1 scope.
 
@@ -99,8 +99,8 @@ by its offset from the FLNG origin.
 ## Example
 
 ```powershell
-dotnet run --project samples/FpsoFrequencyDomain.Sample
-dotnet run --project tests/FpsoFrequencyDomain.Tests
+dotnet run --project flng/samples/FpsoFrequencyDomain.Sample
+dotnet run --project flng/tests/FpsoFrequencyDomain.Tests
 ```
 
 This workspace currently has the .NET runtime but not the .NET SDK installed,

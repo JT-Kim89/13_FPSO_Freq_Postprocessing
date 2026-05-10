@@ -1,106 +1,51 @@
-# Ship Motion Dashboard
+# FPSO / FLNG Frequency-Domain Postprocessing
 
-Python??泥섏쓬 ?ъ슜?섎뒗 ??쒕낫???ㅼ뒿???덉젣?낅땲?? `Streamlit`?쇰줈 ?붾㈃??留뚮뱾怨? ?낅젰 ?곗씠?곕뒗 `SQLite` ?뚯씪(`data/dashboard.db`)????ν빀?덈떎.
+이 저장소는 RAO와 wave spectrum을 이용해 FPSO/FLNG의 frequency-domain 응답을 후처리하는 계산 코드를 관리합니다. 현재 활성 모듈은 `flng/` 아래에 분리되어 있으며, FLNG 단독 운동과 FLNG 우현에 LNGC가 접안한 side-by-side 하역 상태의 relative motion까지 다룹니다.
 
-## ?곗씠??援ъ“
-
-?댁꽍 ?낅젰??怨꾩링 援ъ“???꾨옒? 媛숈뒿?덈떎.
+## 폴더 구조
 
 ```text
-L, B, D
-  -> Loading_Condition: Ballast / FullLoad
-    -> T
-      -> RAO, MPM, Natural Period, Topside Acceleration
+flng/
+  src/FpsoFrequencyDomain/          C# 계산 라이브러리
+  samples/FpsoFrequencyDomain.Sample/  실행 예제
+  tests/FpsoFrequencyDomain.Tests/     smoke test
 ```
 
-利? `T`??`L`, `B`, `D`? ?숇벑???ㅺ퀎蹂?섍? ?꾨땲??`Ballast`, `FullLoad` 議곌굔蹂?draft 媛믪엯?덈떎.
+## FLNG 모듈 범위
 
-## 沅뚯옣 Python
-
-- Python `3.12` 64-bit 沅뚯옣
-- Windows ?ㅼ튂 ??`Add python.exe to PATH` 泥댄겕 沅뚯옣
-- ?꾩옱 PC??湲곕낯 `python`??32-bit?대㈃ 理쒖떊 ?곗씠??遺꾩꽍 ?⑦궎吏 ?ㅼ튂媛 ?ㅽ뙣?????덉뒿?덈떎.
-
-## 湲곕뒫
-
-- `Engineering Review` 肄섏뀎???붾㈃: Summary, Limit Check, Wave Spectrum, Response Spectrum, Hydrostatic & Topside
-- `L`, `B`, `D` 湲곗? ?꾪꽣留?諛?寃쏀뼢??鍮꾧탳
-- `Ballast`, `FullLoad` 議곌굔蹂?寃곌낵 鍮꾧탳
-- RAO?먯꽌 `B`, `D`瑜?怨좎젙?섍퀬 `L` 蹂?붾쭔 ??踰덉뿉 蹂대뒗 geometry sweep ?좏깮
-- `Motion RAO`, `WaveElev RAO` 二쇳뙆???묐떟 怨≪꽑 ?쒓컖??- MPM, Natural Period, Topside Acceleration ?쒓컖??- `L`, `B`, `D`? 寃곌낵媛??ъ씠??Pearson/Spearman ?곴?遺꾩꽍
-- CSV/XLSX ?낅줈????SQLite ???- ?섑뵆 ?곗씠???먮룞 ?앹꽦
-
-## ?ㅽ뻾 諛⑸쾿
-
-```powershell
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-釉뚮씪?곗?媛 ?대━吏 ?딆쑝硫??곕??먯뿉 ?쒖떆?섎뒗 二쇱냼, 蹂댄넻 `http://localhost:8501`濡??묒냽?섎㈃ ?⑸땲??
-
-?대? ?대젮 ?덈뜕 PowerShell?먯꽌 `python`???덉쟾 32-bit Anaconda濡??≫엳硫???PowerShell???닿굅???꾨옒泥섎읆 踰꾩쟾??吏?뺥빐???ㅽ뻾?섏꽭??
-
-```powershell
-py -3.12 -m pip install -r requirements.txt
-py -3.12 -m streamlit run app.py
-```
-
-## C# frequency-domain engine
-
-`src/FpsoFrequencyDomain` contains a .NET 8 C# calculation engine for FPSO
-motion RAO + wave spectrum workflows. The v1 scope intentionally excludes
-stress RAO, load RAO, mooring RAO, riser RAO, and second-order QTF calculations.
-
-Implemented items:
-
-- 6DOF response spectrum, spectral moments, RMS, significant amplitude
-- short-term MPM / expected maximum / exceedance probability
-- long-term annual return value from sea-state probabilities
-- waterline-centre RAO to COG/local-point transformation
-- local point velocity and acceleration spectra
-- relative wave elevation spectrum and MPM
-- air gap / deck wetness probability from relative wave response
-- two-body relative motion for side-by-side FLNG/LNGC offloading
-- operability/downtime checks
+- 6DOF motion RAO 기반 response spectrum
+- 수선면 중심 RAO에서 COG 및 local point motion 변환
+- RMS, spectral moments, significant amplitude
+- short-term MPM, expected maximum, exceedance probability
+- long-term annual return value
+- velocity / acceleration spectrum
+- relative wave elevation, air gap, deck wetness probability
+- FLNG-LNGC side-by-side relative motion
 - stochastic equivalent linear roll damping helper
+- operability / downtime evaluation
 
-The RAO coordinate convention is `x` forward, `y` port, `z` up. Translational
-RAOs are `m/m`; rotational RAOs are `rad/m`. See
-`src/FpsoFrequencyDomain/README.md` for the transformation formula and sample
-usage.
+v1에서는 stress RAO, load RAO, mooring RAO, riser RAO, second-order QTF는 제외합니다. 이런 응답은 추후 별도 모듈로 붙이는 구조가 적합합니다.
+
+## 실행
+
+.NET 8 SDK가 설치된 환경에서:
 
 ```powershell
-dotnet run --project samples/FpsoFrequencyDomain.Sample
-dotnet run --project tests/FpsoFrequencyDomain.Tests
+dotnet run --project flng/samples/FpsoFrequencyDomain.Sample
+dotnet run --project flng/tests/FpsoFrequencyDomain.Tests
 ```
 
-The current PC has the .NET runtime but not the .NET SDK, so these commands need
-the .NET 8 SDK installed.
+현재 작업 PC에는 .NET runtime만 있고 SDK가 없어 local build 검증은 실행하지 못했습니다.
 
-## ?낅젰 ?뚯씪 ?뺤떇
+## RAO 기준
 
-### Design result
+좌표계는 `x` forward, `y` port, `z` up입니다. Translational RAO는 `m/m`, rotational RAO는 `rad/m`를 사용합니다.
 
-```text
-L,B,D,Loading_Condition,T,Heave_MPM,Roll_MPM,Pitch_MPM,Heave_Tn,Roll_Tn,Pitch_Tn,Topside_Accx,Topside_Accy,Topside_Accz
-320,65,32,Ballast,19.8,6.2,8.4,7.3,11.5,20.5,14.3,0.128,0.158,0.198
-320,65,32,FullLoad,24.0,5.7,7.9,6.8,12.0,21.2,14.8,0.118,0.145,0.184
+FLNG RAO가 수선면 배 중심 기준이면 COG 변환은 다음처럼 적용합니다.
+
+```csharp
+var cogFromWaterlineCentre = new BodyPoint(0.0, 0.0, -12.0);
+var cogRao = waterlineCentreRao.TranslateReferenceTo(cogFromWaterlineCentre);
 ```
 
-### RAO data
-
-RAO??媛숈? 怨꾩링 ?ㅼ씤 `L`, `B`, `D`, `Loading_Condition`, `T`瑜??④퍡 ?ｌ뒿?덈떎.
-
-```text
-case_name,L,B,D,Loading_Condition,T,rao_type,dof,frequency,amplitude,phase_deg
-Case-320-65-32-Ballast-T19.8,320,65,32,Ballast,19.8,Motion RAO,Heave,0.25,0.83,-92.5
-Case-320-65-32-FullLoad-T24.0,320,65,32,FullLoad,24.0,Motion RAO,Heave,0.25,0.74,-88.1
-```
-
-## 珥덈낫?먯슜 ?ъ슜 ?쒖꽌
-
-1. ?깆쓣 ?ㅽ뻾?⑸땲??
-2. ?쇱そ ?ъ씠?쒕컮?먯꽌 `Add sample data`瑜??꾨쫭?덈떎.
-3. `Design Results`, `Correlation`, `RAO` ??쓣 ?뚮윭 洹몃옒?꾨? ?뺤씤?⑸땲??
-4. ?ㅼ젣 ?곗씠?곌? ?덉쑝硫?`Data Input` ??뿉??CSV ?먮뒗 XLSX瑜??낅줈?쒗빀?덈떎.
+LNGC가 우현에 붙은 하역 상태는 두 RAO 모델을 입력으로 넣고 두 local point의 complex RAO 차이를 계산합니다. Shielding effect나 hydrodynamic interaction은 RAO 생성 단계에서 반영한 파일을 넣으면 됩니다.
